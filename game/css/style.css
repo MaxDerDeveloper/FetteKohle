@@ -1,0 +1,146 @@
+/* Temporary values, will be changed onload in JS */
+:root {
+	--canvas-width: 1;
+	--canvas-height: 1;
+}
+
+body {
+	background: #111 !important;
+	
+	/* Schriftart */
+	font-family: sans-serif;
+	font-weight: 600;
+
+	overflow-y: scroll;
+}
+
+
+/* ### ### ### CANVAS CSS ### ### ### */
+
+div#canvasdiv {
+	/* centered */
+	position: absolute;
+	top: 0;
+	left: 50%;
+
+	width: 800px;
+	height: 555px;
+
+	transform: translate(-50%, 0%);
+}
+
+div#canvasdiv p {
+	color: white;
+}
+
+div#canvasdiv canvas {
+}
+
+
+div.chat-wrapper {
+	position: absolute;
+	top: calc(555px + 100px);
+	left: 50%;
+
+	width: 800px;
+	height: 555px;
+
+	transform: translate(-50%, 0%);
+}
+
+div.chat-wrapper ol.chat-messages {
+	overflow-y: scroll;
+	overflow-x: hidden;
+	
+	/* Invert y, so most recent message is at bottom. */
+	/*display: flex;
+	flex-direction: row-reverse;*/
+
+	list-style: none;
+
+	height: 200px;
+	background: #777;
+	padding-left:0;
+	border-radius: 3px;
+	
+	padding: 10px;
+	margin-bottom: 10px;
+}
+
+li.message-wrapper {
+
+	background: #333;
+	border: 2px solid #555;
+	border-radius: 5px;
+	padding-left: 20px;
+	margin-bottom:5px;
+
+	--x-padding: 15px;
+	padding-left: var(--x-padding);
+	width: calc(100% - 2 * var(--x-padding));
+}
+
+p.chat-message-author {
+	color: red;
+	text-decoration: underline;
+	margin-bottom: -10px;
+}
+
+p.chat-message-content {
+	color: white;
+}
+
+
+/* ### ### ### INPUT CSS ### ### ### */
+
+div.form-wrapper {
+	width: 200px;
+	height: 50px;
+
+	position: absolute;
+	top: 10%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+
+}
+
+div.form-wrapper * {
+	color:white;
+}
+
+div.form-wrapper form {
+	width: 250px;
+	border-radius: 20px;
+	padding: 20px;
+
+ 	background: rgb(1,14,149);
+	background: linear-gradient(45deg, rgba(1,14,149,1) 13%, rgba(12,138,255,1) 77%); 
+}
+
+div.input-wrapper {
+	position: relative;
+	top: 10px;
+}
+
+form input {
+	background-color: #303245;
+	height: 50px !important;
+	border:	none;
+	width: 100%;
+	border-radius: 12px;
+	font-size: 18px;
+	padding: 4px 20px 0;    /* text alignment */
+	box-sizing: border-box; /* prevents overflow */
+}
+
+form input[type=submit] {
+	background: linear-gradient(45deg, rgba(95,67,164,0.5) 13%, rgba(223,122,255,0.5) 77%);
+
+	margin-top: 20px;
+	text-align: center;
+}
+
+
+form input[type=submit]:hover {
+	background: linear-gradient(45deg, rgba(95,67,164,0.9) 13%, rgba(223,122,255,0.9) 77%);
+}

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<title>Game</title>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
+		<script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+		<script src="js/main.js"></script>
+		<link rel="stylesheet" href="css/style.css">
+	</head>
+
+	<body>
+		<div class="form-wrapper">
+			<form id="username-form">
+				<h1>Hallo!</h1>
+				<h4>Wähle einen Spielernamen</h4>
+
+				<div class="input-wrapper">
+					<input id="username" class="input" type="text" placeholder="Username" name="username" autocomplete=off>
+					<input type="submit" class="submit" value="Bestätigen">
+				</div>
+				
+			</form>
+		</div>
+
+		<div id="canvasdiv" class="canvas" hidden>
+			<p>Loading</p>
+
+		</div>
+
+
+		<div class="chat-wrapper">
+			<ol class="chat-messages" id="chat-ol" reversed="reversed">
+				<li class="message-wrapper">
+					<p class="chat-message-author">Max</p>
+					<p class="chat-message-content">Wow, was für ein wohl durchdachtes und gut implementiertes Chatsystem!</p>
+				</li>
+
+				<li class="message-wrapper">
+					<p class="chat-message-author">Oliver</p>
+					<p class="chat-message-content">Ich stimme dir zu! Wer auch immer das programmiert hat, hat Ahnung von seinem Job!</p>
+				</li>
+			</ol>
+
+			<form id="chat-form">
+				<input type=text id="chat-input" name="msg">
+				<button type=submit>Senden</button>
+			</form>
+		</div>
+	</body>
+</html>
