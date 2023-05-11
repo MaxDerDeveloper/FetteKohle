@@ -268,19 +268,80 @@ class Field {
 	}
 }
 
+class Falling {
+	constructor() {
+		this.x   = s.random(0, width);
+		this.y   = s.random(-20,-800);
+		this.rot = s.random(0, 2*s.PI);
+		this.ang = s.random(-1, 1) * 0.1;
+	}
+
+	draw() {
+		s.push();
+
+		s.translate(this.x, this.y);
+		s.rotate(this.rot);
+		s.fill("red");
+		s.rectMode(s.CENTER)
+		s.rect(0, 0, 20, 20)
+
+		s.pop();
+	}
+}
+
+class FallingAnimation {
+	constructor(count, fallingSpeed, isContinuous) {
+		this.falling = [];
+		for (let i=0; i<count; i++) {
+			this.falling.push(new Falling());
+		}
+		this.fallingSpeed = fallingSpeed;
+		this.isContinuous = isContinuous;
+	}
+
+	updateFalling() {
+		for (var f of this.falling) {
+			f.y += this.fallingSpeed;
+			f.rot += f.ang;
+
+		
+			if (f.y > height+50) {
+				this.falling.splice(this.falling.indexOf(f), 1);
+
+				if (this.isContinuous) { this.falling.push(new Falling()); }
+			}
+		}
+	}
+
+	drawFalling() {
+		for (var f of this.falling) {
+			f.draw();
+		}
+	}
+
+	
+
+	draw() {
+		this.updateFalling();
+		this.drawFalling();
+	}
+}
+
 class TitleScreen {
 	constructor() {
-		this.titleScreen = s.loadImage("https://max-weiser.de/static/game/img/title_screen.png");
-		this.btn         = new Button(300, 400, 200, 50, "Play!", [155, 123, 1], [225, 173, 1]);
+		this.titleScreen  = s.loadImage("https://max-weiser.de/static/game/img/title_screen.png");
+		this.btn          = new Button(300, 400, 200, 50, "Play!", [155, 123, 1], [225, 173, 1]);
 		this.btn.on_click = () => {
 			setActiveScreen(new GameScreen());
 		}
+		this.anim = new FallingAnimation(25, 5, false);
 	}
 
 	draw() {
 		s.image(this.titleScreen, 0, 0);
 
 		this.btn.draw();
+		this.anim.draw();
 	}
 }
 

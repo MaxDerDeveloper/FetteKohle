@@ -29,6 +29,7 @@ function initWithData(event) {
 
 function init(data) {
 	var canvasDiv = document.getElementById("canvasdiv");
+	window.username = event.username;
 	include("js/game_main.js");
 	include("js/chat.js");
 	deleteForm();
