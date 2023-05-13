@@ -29,13 +29,15 @@ function appendMessage(author, message, doScroll) {
 }
 
 function main() {
-	appendMessage("Peter", "Wer ist dieser charmante Mann auf dem Titel-Bildschirm?");
+	appendMessage(
+		"Peter",
+		"Wer ist dieser charmante Mann auf dem Titel-Bildschirm?",
+		false
+	);
 }
 
-// setTimeout(
-// 	main,
-// 	5000
-// );
+// setTimeout(main, 1000);
+
 
 // function dash () Y= 00 # 
 // submit/ roll if max= waiser == pro 

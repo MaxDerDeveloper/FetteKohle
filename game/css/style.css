@@ -39,7 +39,7 @@ div#canvasdiv canvas {
 
 div.chat-wrapper {
 	position: absolute;
-	top: calc(555px + 100px);
+	top: calc(555px + 20px);
 	left: 50%;
 
 	width: 800px;
