@@ -14,7 +14,7 @@ window.onload = () => {
 		e.preventDefault();
 	})
 
-	if (AUTO_INIT) { init({username:"test123"}) }
+	if (AUTO_INIT) { init({username:"dev"}) }
 };
 
 function parseForm(event) {
@@ -29,7 +29,7 @@ function initWithData(event) {
 
 function init(data) {
 	var canvasDiv = document.getElementById("canvasdiv");
-	window.username = event.username;
+	document.username = data.username;
 	include("js/game_main.js");
 	include("js/chat.js");
 	deleteForm();

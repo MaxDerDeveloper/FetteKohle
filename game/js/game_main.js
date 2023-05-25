@@ -5,7 +5,8 @@ var socket;
 var username = null;
 var canvas;
 var s; // Sketch
-var gmscr;
+var gamescr;
+var titlescr;
 var betlogic;
 
 let width  = 800;
@@ -85,27 +86,76 @@ class LayeredImage {
 	}
 }
 
+class WheelAnimation {
+	constructor(on_rest) {
+		this.on_rest = on_rest;
+		this.reset();
+		this.is_running = false;
+		this.theta      = (0.5 + s.int(s.random(0, 37)) ) * (2*s.PI/37);
+	}
+
+	reset() {
+		this.numFrames  = 600;
+		this.index      = 0;
+		this.is_running = true;
+
+		this.omega     = 0; // Angular velocity
+		this.theta     = 0; // Angle
+	}
+
+	calcField() {
+		var field = (gamescr.wheel.anim.theta - s.PI);
+		field %= 2 * s.PI;
+		field *= -37 / (2 * s.PI);
+
+		if (field.toFixed(0) <= -1) { field = 37 - Math.abs(field); }
+
+		return field.toFixed(0).toString();
+	}
+
+	update() {
+		if (!this.is_running) { return; }
+
+		// Spin phase
+		if (this.index == 0) {
+			this.omega = (3 + s.random(0, 1)) * 3.141/60;
+		}
+
+		// Slow down phase
+		if (100 < this.index && this.index < 400) {
+			this.omega *= 0.99;
+			// this.omega *= 0.90;
+		}
+
+		// Stop.
+		if (this.index == 400) {
+			this.omega = 0;
+			this.on_rest(this.calcField());
+			this.is_running = false;
+		}
+
+		this.theta += this.omega;
+		this.index += 1;
+	}
+}
+
 class Wheel {
 	constructor() {
 		this.center = s.createVector(width/2, 115);
 		this.radius = 105;
-
-		this.img = s.loadImage("https://max-weiser.de/static/game/img/wheel.png");
-
+		this.img    = s.loadImage("https://max-weiser.de/static/game/img/wheel.png");
 		this.number = undefined;
-		this.theta  = s.PI/2;
-		this.omega  = 0
-
-		this.animationFrameCount = 600;
-		this.currentFrame = 0;
 		
 		this.on_spin = () => {};
-		this.on_rest = () => {};
+		this.on_rest = (field) => { betlogic.checkForWin(field) };
+
+		this.anim   = new WheelAnimation( this.on_rest );
 	}
 
 	spinLogic() {
-		this.theta += this.omega;
-		this.omega *= 0.99;
+		this.anim.update();
+		this.theta = this.anim.theta;
+		// console.log(this.anim.theta);
 	}
 
 
@@ -176,27 +226,41 @@ class Wheel {
 			var h = this.img.height;
 
 			s.image(this.img, -w/2, -h/2);
-
 		s.pop();
 		this.currentFrame += 1;
+
+		s.stroke("white");
+		s.line(
+			this.center.x,
+			this.center.y - this.radius - 15,
+
+			this.center.x,
+			this.center.y - this.radius,
+		);
+		s.noStroke();
 	}
 
-	spin(number) {
-		this.number = number;
-		// 1 = one half rotation
-		this.omega = 0.05;
-		this.on_spin(number)
+	spin() {
+		if (this.anim.is_running) { return; }
+
+		this.anim.reset();
+		this.on_spin()
 	}
 }
 
 class Button {
-	constructor(x, y, w, h, text, color, strokeColor) {
+	constructor(x, y, w, h, text, color, strokeColor, alpha) {
 		this.x     = x;
 		this.y     = y;
 		this.w     = w;
 		this.h     = h;
 		this.text  = text
 		this.color = color!==undefined ? color : "red";
+		
+		this.alpha = alpha!==undefined ? alpha : 255;
+		this.color = s.color(this.color);
+		this.color.setAlpha(this.alpha);
+
 		this.strokeColor = strokeColor!==undefined ? strokeColor : "white";
 		this.isClicked   = false;
 		this.wasClicked  = false
@@ -214,6 +278,7 @@ class Button {
 		this.isClicked = isHovered && s.mouseIsPressed;
 		
 		if (this.isClicked && !this.wasClicked) { this.on_click(this.text); }
+
 
 		if(isHovered) {
 			s.stroke(this.strokeColor);
@@ -236,7 +301,7 @@ class Button {
 			this.x + this.w/2,
 			this.y + this.h/2,
 		);
-
+		
 		this.wasClicked = this.isClicked;
 	}
 }
@@ -247,6 +312,7 @@ class BetLogic {
 
 		this.bets    = {};
 		this.balance = balance;
+		this.history = [];
 
 		this.betFields = {};
 		this.initBetFields();
@@ -266,7 +332,7 @@ class BetLogic {
 
 	bet(field, amount) {
 		if (amount > this.balance) {
-			console.log("Du hast nicht genug Kohle!");
+			sendRandomBotMessage("insufficient_funds");
 			return;
 		}
 
@@ -283,21 +349,122 @@ class BetLogic {
 		this.balance -= amount;
 	}
 
-	checkForWin(chosenField) {
+	getStatus(won, bet) {
+		if (won > bet) { return "winning" }
+		else if (won < bet) { return "losing" }
+		else if (won == bet) { return "equal" }
+	}
+
+	checkForWin(randomField) {
 		var wonMoney = 0;
+		var betMoney = 0
 
 		for (var pair of Object.entries(this.bets)) {
-			var [field, amount] = pair;
+			var [f, a] = pair;
 
-			// console.log("Field:", field, chosenField, field === chosenField, "mult:", this.betFields[chosenField]);
-			if (field === chosenField.toString()) {
-				wonMoney += this.bets[chosenField] * this.betFields[chosenField];
+			betMoney += a;
+
+			// this.balance -= this.bets[f];
+			// console.log("Field:", f, randomField, f === randomField, "mult:", this.betFields[randomField]);
+			if (f === randomField.toString() && a != 0) {
+				console.log("Direct field");
+				wonMoney += a * this.betFields[randomField];
 			}
 
+			// Red
+			if (f == "Red" && a != 0 && colors[parseInt(randomField)]==RED) {
+				wonMoney += a * this.betFields["Red"];
+				console.log("red");
+			}
+
+			// Black
+			if (f == "Black" && a != 0 && colors[parseInt(randomField)]==BLACK) {
+				wonMoney += a * this.betFields["Black"];
+				console.log("black");
+			}
+
+			// Even
+			if (f == "Even" && a != 0 && (randomField%2==0)) {
+				wonMoney += a * this.betFields["Even"];
+				console.log("even");
+			}
+
+			// Odd
+			if (f == "Odd" && a != 0 && (randomField%2==1)) {
+				wonMoney += a * this.betFields["Odd"];
+				console.log("odd");
+			}
+
+			// 1st 12
+			if (f == "1st 12" && randomField > 0 && randomField <= 12) {
+				wonMoney += a * this.betFields["1st 12"];
+				console.log("1st 12");
+			}
+
+			// 2nd 12
+			if (f == "2nd 12" && randomField > 12 && randomField <= 24) {
+				wonMoney += a * this.betFields["2nd 12"];
+				console.log("2nd 12");
+			}
+
+			// 3rd 12
+			if (f == "3rd 12" && randomField > 24 && randomField <= 36) {
+				wonMoney += a * this.betFields["3rd 12"];
+				console.log("3rd 12");
+			}
+
+			// 1st Half
+			if (f == "1st Half" && randomField > 0 && randomField <= 18) {
+				wonMoney += a * this.betFields["3rd 12"];
+				console.log("1st Half");
+			}
+
+			// 2nd Half
+			if (f == "2nd Half" && randomField > 18 && randomField <= 36) {
+				wonMoney += a * this.betFields["3rd 12"];
+				console.log("2nd Half");
+			}
 		}
 
-		this.balance = wonMoney;
+		var status = this.getStatus(wonMoney, betMoney);
+		this.history.push(status);
+
+		console.log("Won money:", wonMoney);
+		this.balance += wonMoney;
 		this.bets    = {};
+
+		this.checkForStreaks();
+	}
+
+	checkForStreaks() {
+		console.log(this.history)
+
+		var streakType;
+		var streakCount = 0;
+
+		for (var j=0; j<this.history.length; j++) {
+			var i = this.history.length - 1;
+
+			// Last element
+			if (j == 0) {
+				streakType = this.history[i];
+				streakCount = 1;
+				continue;
+			}
+
+			// Check if any more elements are equal
+			if (streakType == this.history[i]) {
+				streakCount += 1;
+			} else {
+				break;
+			}
+		}
+
+		if (streakCount >= 2) {
+			sendRandomBotMessage(streakType + "_streak");
+		}
+
+		return [streakType, streakCount]
 	}
 
 	draw() {
@@ -527,10 +694,17 @@ class TitleScreen {
 			"layers/schriftzug.png",
 			"layers/businessman.png"
 		]);
-		this.btn          = new Button(300, 400, 200, 50, "Play!", [155, 123, 1], [225, 173, 1]);
-		this.btn.on_click = () => {
+		this.btn_play = new Button(300, 400, 200, 50, "Zöcken!", [155, 123, 1], [225, 173, 1]);
+		this.btn_play.on_click = () => {
+			gamescr = new GameScreen();
 			setActiveScreen(gamescr);
 		}
+
+		this.btn_tutorial = new Button(300, 330, 200, 50, "Tutorial", [155, 123, 1], [225, 173, 1]);
+		this.btn_tutorial.on_click = () => {
+			setActiveScreen(new TutorialScreen());
+		}
+
 		this.anim = new FallingAnimation(15, 5, true);
 	}
 
@@ -540,7 +714,8 @@ class TitleScreen {
 		this.titleScreen.drawSingleLayer(1); // Schriftzug
 		this.titleScreen.drawSingleLayer(2); // Businessman
 
-		this.btn.draw();
+		this.btn_play.draw();
+		this.btn_tutorial.draw();
 	}
 }
 
@@ -565,16 +740,88 @@ class GameScreen {
 		this.wheel.draw();
 		betlogic.draw();
 
-		s.text(Math.round(s.frameRate()), 420, 480);
+		// Display framerate
+		// s.text(Math.round(s.frameRate()), 420, 480);
 	}
 }
 
+// Reference: https://editor.p5js.org/juhe2229/sketches/4zg6iDbB4
+class TutorialScreen {
+	constructor() {
+		this.text = "Es ist eine hoffnungslose Zeit\nim Land der Fetten Köhle...\nDie Taschen der Leute sind leer\nund ihre Herzen getrübt\nDoch Hoffnung keimt am Horizont auf:\nEinige Glücksspielprofis haben vor\ndie digitale Spielewelt vollkommen zu verändern...\nWenn du schon zu den Meistern gehörst,\nüberspringe dies gerne,\nwenn du den Weg der FETTEN KÖHLE\nnoch lernen musst, heißen wir dich herzlich Willkommen!\n\nDas Herzstück unseres Roulettes\nist das große Rad über der Mitte\nEs dreht sich permanent\nDarunter seht ihr 37 Zahlen\nin rot, schwarz und grün.\nDu erhältst etwas Start-KØHLE,\nGeh sorgfältig damit um!\nMit einem Klick auf\neine der Optionen setzt du 10 Einheiten\nWette schlau,\nDer Ball rollt schon bald\nin das Rad und fällt in ein Feld!\nDamit wird entschieden,\nwer seine KØHLE vervielfacht,\n und wer sie abgibt.\nAm unteren Bildschirmrand\nkannst du mit deinen Mithustlern\nkommunizieren.\n Bleib aber immer nett und respektvoll!\nDas eingebaute System wird\ndeine Mitspieler schon genug nerven.\nAber nun, mein Kind\nbrich auf auf dein Abenteuer\nund fülle deine Taschen mit\nKÖHLE!!!";
+		this.y    = 0;
+		this.img  = s.loadImage("https://max-weiser.de/static/game/img/layers/schriftzug.png");
+		this.button = new Button(
+			5, 5, 
+			100, 50,
+			"Zurück", [155, 123, 1], [225, 173, 1],
+			64
+		);
+		this.button.on_click = () => { this.on_finish(); };
+	}
+
+	update() {
+		var vel = 35; // pixels/sec
+		this.y -= vel / s.frameRate();
+	}
+
+	on_finish() {
+		// Return to title screen.
+		setActiveScreen(titlescr);
+	}
+
+	draw() {
+		this.update();
+
+		s.background(0);
+
+		// s.fill("white");
+		// s.textAlign(s.LEFT, s.TOP);
+		// s.text(
+		// 	this.y.toFixed(0).toString(),
+		// 	50, 50
+		// );
+
+		if (this.y < -2800) {
+			this.on_finish();
+		}
+
+		s.push();
+			s.textAlign(s.CENTER, s.TOP);
+			s.textSize(40);
+			s.noStroke();
+ 
+			s.fill(42, 192, 209); // blue
+			s.text(
+				"Vor langer, langer Zeit in einem weit, weit entfernten Casino...",
+				0, this.y + height*0.5,
+				width
+			)
+
+			s.image(
+				this.img,
+				50, this.y + height * 1.25
+			);
+
+			s.fill(200,180,0); // yellow
+			s.text(
+				this.text,
+				0,
+				this.y + height * 1.75,
+				width,
+			);
+		s.pop();
+
+		this.button.draw();
+		
+	}
+}
+
+document.activeScreen = null;
 
 function setActiveScreen(screen) {
 	document.activeScreen = screen;
 }
-
-document.activeScreen = null;
 
 let myp5 = new p5((sketch) => {
 	s = sketch; // Set global, so there's access from everywhere.
@@ -611,13 +858,15 @@ let myp5 = new p5((sketch) => {
 
 		betlogic = new BetLogic(100);
 
-		ts      = new TitleScreen();
-		setActiveScreen(ts);
-		ts.btn.on_click() // Automatically, click "Play".
+		titlescr      = new TitleScreen();
+		setActiveScreen(titlescr);
+		// titlescr.btn_play.on_click() // Automatically, click "Play".
 	}
 
 	s.draw = () => {
-		document.activeScreen.draw();
+		if (document.activeScreen !== undefined) {
+			document.activeScreen.draw();
+		}
 	}
 
 	function keyPressed() {
