@@ -9,13 +9,18 @@ input_form.onsubmit = (event) => {
 	event.target.children[0].value = "";
 }
 
-function appendMessage(author, message) {
+function appendMessage(author, message, isBot) {
 	var author_p = document.createElement("p");
 	author_p.innerHTML = author;
 	author_p.classList.add("chat-message-author");
 
 	var content_p = document.createElement("p");
-	content_p.innerHTML = message;  
+	if (isBot) {
+		content_p.innerHTML = message;
+	} else {
+		// Prevents XSS by users.
+		content_p.innerText = message;
+	}
 	content_p.classList.add("chat-message-content")
 
 	var li = document.createElement("li");
@@ -47,9 +52,28 @@ botMessages = {
 		"Wer jetzt gewinnt, verdient später noch mehr als der Peter."
 	],
 
+	no_money_left: [
+		"Psst...<br>Wenn die Kohle aus ist, kannst du eine deiner Niere verpfänden, indem du <i>TAB<i> drückst."
+	],
+
 	equal_streak: [
 		"Harte Arbeit, karger Lohn.",
-		""
+	],
+
+	above_1000: [
+		"Geringverdiener aus dem Weg, hier macht jemand die <i>Fette Köhle<i>"
+	],
+
+	bet_during_spin: [
+		"Wenn das Rad sich dreht, ist's zum Wetten zu spät :("
+	],
+
+	invalid_bet: [
+		"So eine unseriöse Wette nehmen wir nicht an."
+	],
+
+	no_bet: [
+		"Du musst erst 'was setzen, das würden wir sehr schätzen."
 	]
 }
 
@@ -62,7 +86,8 @@ function sendRandomBotMessage(reason) {
 
 	var li = appendMessage(
 		"Köhle Bot 🤖",
-		chooseRandomElement(choices)
+		chooseRandomElement(choices),
+		true
 	);
 	li.classList.add("bot-username");
 }
@@ -82,10 +107,29 @@ function scrollToMessage(target_li) {
 	});
 }
 
+function escapeHtml(unsafe)
+{
+    return unsafe
+         .replace(/&/g, "&amp;")
+         .replace(/</g, "&lt;")
+         .replace(/>/g, "&gt;")
+         .replace(/"/g, "&quot;")
+         .replace(/'/g, "&#039;");
+}
+
+function sendKidneySellingMessage() {
+	appendMessage(
+		"<span style='position:relative; left:25px; color:#0066ff; line-height:150%;'>Dr. Seriös</span>",
+		"<div style='height:128px;'><img src='https://max-weiser.de/static/game/img/doctor.jpg' style='float:left; margin-right:15px; border-radius: 64px' height=128 width=128><p>Vielen Dank, " + escapeHtml(document.username) + "!<br>Hier hast du 500 Köhle-Chips für deine Niere.</p></div>",
+		true
+	);
+
+}
+
+
 function main() {
 	appendMessage("Max", "Wow, was für ein wohl durchdachtes und gut implementiertes Chatsystem!",);
 	appendMessage("Oliver", "Ich stimme dir zu! Wer auch immer das programmiert hat, hat Ahnung von seinem Job!",);
-	var target = appendMessage("Peter", "Wer ist dieser charmante Mann auf dem Titel-Bildschirm?",);
 	appendMessage("Mika", "Respeeekt 💯",);
 }
 

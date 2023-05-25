@@ -1,5 +1,6 @@
-var form;
-const AUTO_INIT = true;
+var   form;
+const isProduction = window.location.host === "max-weiser.de";
+const AUTO_INIT    = false;
 
 window.onload = () => {
 	form = document.getElementById("username-form");
@@ -31,15 +32,20 @@ function init(data) {
 	var canvasDiv = document.getElementById("canvasdiv");
 	document.username = data.username;
 	include("js/game_main.js");
-	include("js/chat.js");
 	deleteForm();
 
 	// Greeting message
-	var p = document.querySelector("div#canvasdiv p");
-	p.innerText = `Willkommen, ${data.username}!`;
+	// var p = document.querySelector("div#canvasdiv p");
+	// p.innerText = `Willkommen, ${data.username}!`;
 
 	// When all changes were applied, show them.
 	canvasDiv.hidden = false;
+
+	// Show Chat-UI
+	document.querySelector("div.chat-wrapper").hidden = false;
+
+	// Intentionally after revealing the Chat-UI: showing off with smooth animations!
+	include("js/chat.js");
 }
 
 

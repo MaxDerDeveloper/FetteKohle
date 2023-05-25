@@ -4,8 +4,7 @@
 		<meta charset="utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1">
 		<title>Game</title>
-		<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.6.0/p5.min.js"></script>
-		<script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+		<script src="js/lib/p5.min.js"></script>
 		<script src="js/main.js"></script>
 		<link rel="stylesheet" href="css/style.css">
 	</head>
@@ -24,10 +23,7 @@
 			</form>
 		</div>
 
-		<div id="canvasdiv" class="canvas" hidden>
-			<p>Loading</p>
-
-		</div>
+		<div id="canvasdiv" class="canvas" hidden></div>
 
 		<style type="text/css">
 			div.cont {
@@ -35,8 +31,7 @@
 			}
 		</style>
 
-		<!-- class="chat-wrapper" -->
-		<div class="chat-wrapper">
+		<div class="chat-wrapper" hidden>
 			<ol class="chat-messages" id="chat-ol" reversed="reversed"></ol>
 
 			<form id="chat-form">
